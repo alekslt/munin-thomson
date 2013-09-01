@@ -143,6 +143,7 @@ sub print_values
 {
 	if ( $self =~ /multi/)
         {
+		print "multigraph thomson_down_snr\n";
 		for my $ch ( 0 .. @downstream-1)
 		{
 			my $chan = $downstream[$ch];
@@ -153,6 +154,7 @@ sub print_values
 
         if ( $self =~ /multi/)
         {
+		print "multigraph thomson_down_power\n";
                 for my $ch ( 0 .. @downstream-1)
                 {
                         my $chan = $downstream[$ch];
@@ -162,7 +164,8 @@ sub print_values
         }
 
         if ( $self =~ /multi/)
-        {
+        {	
+		print "multigraph thomson_down_freq\n";
                 for my $ch ( 0 .. @downstream-1)
                 {
                         my $chan = $downstream[$ch];
@@ -173,6 +176,7 @@ sub print_values
 
         if ( $self =~ /multi/)
         {
+		print "multigraph thomson_up_power\n";
                 for my $ch ( 0 .. @upstream-1)
                 {
                         my $chan = $upstream[$ch];
@@ -183,6 +187,7 @@ sub print_values
 
         if ( $self =~ /multi/)
         {
+		print "multigraph thomson_up_freq\n";
                 for my $ch ( 0 .. @upstream-1)
                 {
                         my $chan = $upstream[$ch];
