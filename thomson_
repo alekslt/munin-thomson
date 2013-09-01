@@ -197,8 +197,6 @@ sub print_values
 #######################################
 
 set_aspect();
-
-print $self . "\n";
 connect_and_parse();
 
 if ( $ARGV[0] && $ARGV[0] eq "config" ) {
