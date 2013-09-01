@@ -1,0 +1,208 @@
+#!/usr/bin/perl -w
+
+use LWP::Simple;
+use URI;
+use HTML::TableExtract;
+use strict;
+
+our $URL = "http://192.168.100.1/Diagnostics.asp";
+our $statfile = "/tmp/thomson-diag";
+
+my @downstream;
+my @upstream;
+
+my @down_part = ( "channel", "freq", "power", "snr", "ber", "modulation" );
+my @up_part = ( "channel", "freq", "power" );
+
+my $self;
+
+sub set_aspect
+{
+        $self = $0;
+        $self =~ s/^.*\/thomson_//;
+}
+
+sub connect_and_parse
+{
+	#get($URL);
+	#my $page = get($URL) or die "Unable to get page";
+
+	our $te = HTML::TableExtract->new( subtables=>1 );
+	#$te->parse($page);
+
+	$te->parse_file($statfile);
+	
+	#$te->tables_dump( show_content=>1);
+
+	my $downrows = $te->table(4,0)->rows;
+	my $uprows = $te->table(4,1)->rows;
+
+	for ( my $rownum = 1; $rownum < @$downrows; $rownum++)
+	{
+		my $chanstat_d = {};
+
+		for my $i ( 0 .. @down_part-1 )
+		{
+			$chanstat_d->{$down_part[$i]} = (split / /, @{$downrows->[$rownum]}[$i])[0];
+		}
+		
+		push @downstream, $chanstat_d;
+	}
+ 	for ( my $rownum = 1; $rownum < @$uprows; $rownum++)
+        {
+		my $chanstat_u = {};
+	        for my $i ( 0 .. @up_part-1 )
+                {
+                        $chanstat_u->{$up_part[$i]} = (split / /, @{$uprows->[$rownum]}[$i])[0];
+                }
+
+                push @upstream, $chanstat_u;
+	}
+}
+
+sub print_config
+{
+	if ( $self =~ /multi/)
+	{
+		print "multigraph thomson_down_snr\n";
+		print "graph_title Thomson Downstream Signal to Noise (dB)\n";
+		print "graph_vlabel dB (decibels)\n";
+		print "graph_category thomson\n";
+
+	        for my $row ( 0 .. @downstream-1)
+	        {
+			print "downstream_" . $row . "_snr.label Downstream CH" . $row . "\n";
+
+		}
+	}
+
+        if ( $self =~ /multi/)
+        {
+                print "multigraph thomson_down_power\n";
+                print "graph_title Thomson Downstream Power (dBmV)\n";
+                print "graph_vlabel dBmV (decibels mV)\n";
+                print "graph_category thomson\n";
+
+                for my $row ( 0 .. @downstream-1)
+                {
+                        print "downstream_" . $row . "_power.label Downstream CH" . $row . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {
+                print "multigraph thomson_down_freq\n";
+                print "graph_title Thomson Downstream Frequency (Hz)\n";
+                print "graph_vlabel Hz (Hertz)\n";
+                print "graph_category thomson\n";
+
+                for my $row ( 0 .. @downstream-1)
+                {
+                        print "downstream_" . $row . "_freq.label Downstream CH" . $row . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {
+                print "multigraph thomson_up_freq\n";
+                print "graph_title Thomson Upstream Frequency (Hz)\n";
+                print "graph_vlabel Hz (Hertz)\n";
+                print "graph_category thomson\n";
+
+                for my $row ( 0 .. @upstream-1)
+                {
+                        print "upstream_" . $row . "_freq.label Upstream CH" . $row . "\n";
+
+                }
+        }
+
+
+        if ( $self =~ /multi/)
+        {
+                print "multigraph thomson_up_power\n";
+                print "graph_title Thomson Upstream Power (dBmV)\n";
+                print "graph_vlabel dBmV (decibels mV)\n";
+		print "graph_category thomson\n";
+
+                for my $row ( 0 .. @upstream-1)
+                {
+                        print "upstream_" . $row . "_power.label Upstream CH" . $row . "\n";
+
+                }
+        }
+
+
+
+
+	exit 0;
+}
+
+sub print_values
+{
+	if ( $self =~ /multi/)
+        {
+		for my $ch ( 0 .. @downstream-1)
+		{
+			my $chan = $downstream[$ch];
+			print "downstream_" . $ch . "_snr.value " . $chan->{'snr'} . "\n";
+	
+		}
+	}
+
+        if ( $self =~ /multi/)
+        {
+                for my $ch ( 0 .. @downstream-1)
+                {
+                        my $chan = $downstream[$ch];
+                        print "downstream_" . $ch . "_power.value " . $chan->{'power'} . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {
+                for my $ch ( 0 .. @downstream-1)
+                {
+                        my $chan = $downstream[$ch];
+                        print "downstream_" . $ch . "_freq.value " . $chan->{'freq'} . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {
+                for my $ch ( 0 .. @upstream-1)
+                {
+                        my $chan = $upstream[$ch];
+                        print "upstream_" . $ch . "_power.value " . $chan->{'power'} . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {
+                for my $ch ( 0 .. @upstream-1)
+                {
+                        my $chan = $upstream[$ch];
+                        print "upstream_" . $ch . "_freq.value " . $chan->{'freq'} . "\n";
+
+                }
+        }
+
+
+
+}
+#######################################
+
+set_aspect();
+
+print $self . "\n";
+connect_and_parse();
+
+if ( $ARGV[0] && $ARGV[0] eq "config" ) {
+        print_config();
+}
+
+print_values();
