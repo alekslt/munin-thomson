@@ -169,7 +169,7 @@ sub print_values
                 for my $ch ( 0 .. @downstream-1)
                 {
                         my $chan = $downstream[$ch];
-                        print "downstream_" . $ch . "_freq.value " . $chan->{'freq'} . "\n";
+                        print "downstream_" . $ch . "_freq.value " . ( $chan->{'freq'} * 1000000 ) . "\n";
 
                 }
         }
@@ -191,7 +191,7 @@ sub print_values
                 for my $ch ( 0 .. @upstream-1)
                 {
                         my $chan = $upstream[$ch];
-                        print "upstream_" . $ch . "_freq.value " . $chan->{'freq'} . "\n";
+                        print "upstream_" . $ch . "_freq.value " . ( $chan->{'freq'} * 1000000 ) . "\n";
 
                 }
         }
