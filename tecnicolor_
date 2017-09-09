@@ -1,0 +1,221 @@
+#!/usr/bin/perl -w
+
+use LWP::Simple;
+use URI;
+use HTML::TableExtract;
+use strict;
+
+our $URL = "http://192.168.100.1/RgConnect.asp";
+our $statfile = "/tmp/multicolor-diag";
+
+my @downstream;
+my @upstream;
+
+my @down_part = ( "Channel", "Lock Status", "Modulation", "Channel ID", "Symbol Rate", "Frequency", "Power", "SNR" );
+my @up_part = ( "Channel", "Lock Status", "Modulation", "Channel ID", "Symbol Rate", "Frequency", "Power" );
+
+my $self;
+
+sub set_aspect
+{
+        $self = $0;
+        $self =~ s/^.*\/technicolor_//;
+}
+
+sub connect_and_parse
+{
+	#get($URL);
+	#my $page = get($URL) or die "Unable to get page";
+
+	our $te = HTML::TableExtract->new( subtables=>1 );
+	#$te->parse($page);
+
+	$te->parse_file($statfile);
+	
+	#$te->tables_dump( show_content=>1);
+
+	my $downrows = $te->table(1,1)->rows;
+	my $uprows = $te->table(1,3)->rows;
+
+	for ( my $rownum = 2; $rownum < @$downrows; $rownum++)
+	{
+		my $chanstat_d = {};
+
+		for my $i ( 0 .. @down_part-1 )
+		{
+			my $str = @{$downrows->[$rownum]}[$i];
+			$str =~ s/^\s+|\s+$//g;
+			$chanstat_d->{$down_part[$i]} = (split /\s/, $str)[0];
+			#print "$i $down_part[$i] $chanstat_d->{$down_part[$i]}        |@{$downrows->[$rownum]}[$i]|\n"
+		}
+		
+		push @downstream, $chanstat_d;
+	}
+ 	for ( my $rownum = 2; $rownum < @$uprows; $rownum++)
+        {
+		my $chanstat_u = {};
+	        for my $i ( 0 .. @up_part-1 )
+                {
+			my $str = @{$uprows->[$rownum]}[$i];
+                        $str =~ s/^\s+|\s+$//g;
+
+                        $chanstat_u->{$up_part[$i]} = (split / /, $str)[0];
+			#print "$i $up_part[$i] $chanstat_u->{$up_part[$i]}\n"
+                }
+
+                push @upstream, $chanstat_u;
+	}
+}
+
+
+
+sub print_config
+{
+	if ( $self =~ /multi/)
+	{
+		print "multigraph technicolor_down_snr\n";
+		print "graph_title Technicolor Downstream Signal to Noise (dB)\n";
+		print "graph_vlabel dB (decibels)\n";
+		print "graph_category technicolor\n";
+
+	        for my $row ( 0 .. @downstream-1)
+	        {
+			print "downstream_" . $row . "_snr.label Downstream CH" . (int($row)+1) . "\n";
+
+		}
+	}
+
+        if ( $self =~ /multi/)
+        {
+                print "multigraph technicolor_down_power\n";
+                print "graph_title Technicolor Downstream Power (dBmV)\n";
+                print "graph_vlabel dBmV (decibels mV)\n";
+                print "graph_category technicolor\n";
+
+                for my $row ( 0 .. @downstream-1)
+                {
+                        print "downstream_" . $row . "_power.label Downstream CH" . (int($row)+1) . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {
+                print "multigraph technicolor_down_chanid\n";
+                print "graph_title Technicolor Downstream Channel ID\n";
+                print "graph_vlabel ID\n";
+                print "graph_category technicolor\n";
+
+                for my $row ( 0 .. @downstream-1)
+                {
+			my $chan = $downstream[$row];
+                        print "downstream_" . $row . "_freq.label Downstream CH" . (int($row)+1) . "\n";
+
+                }
+        }
+	
+        if ( $self =~ /multi/)
+        {
+                print "multigraph technicolor_up_chanid\n";
+                print "graph_title Technicolor Upstream Channel ID\n";
+                print "graph_vlabel ID\n";
+                print "graph_category technicolor\n";
+
+                for my $row ( 0 .. @upstream-1)
+                {
+			my $chan = $upstream[$row];
+                        print "upstream_" . $row . "_freq.label Upstream CH" . (int($row)+1) . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {
+                print "multigraph technicolor_up_power\n";
+                print "graph_title Technicolor Upstream Power (dBmV)\n";
+                print "graph_vlabel dBmV (decibels mV)\n";
+		print "graph_category technicolor\n";
+
+                for my $row ( 0 .. @upstream-1)
+                {
+                        print "upstream_" . $row . "_power.label Upstream CH" . (int($row)+1) . "\n";
+
+                }
+        }
+
+
+
+
+	exit 0;
+}
+
+sub print_values
+{
+	if ( $self =~ /multi/)
+        {
+		print "multigraph technicolor_down_snr\n";
+		for my $ch ( 0 .. @downstream-1)
+		{
+			my $chan = $downstream[$ch];
+			print "downstream_" . $ch . "_snr.value " . $chan->{'SNR'} . "\n";
+	
+		}
+	}
+
+        if ( $self =~ /multi/)
+        {
+		print "multigraph technicolor_down_power\n";
+                for my $ch ( 0 .. @downstream-1)
+                {
+                        my $chan = $downstream[$ch];
+                        print "downstream_" . $ch . "_power.value " . $chan->{"Power"} . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {	
+		print "multigraph technicolor_down_chanid\n";
+                for my $ch ( 0 .. @downstream-1)
+                {
+                        my $chan = $downstream[$ch];
+                        print "downstream_" . $ch . "_freq.value " . (int( $chan->{"Channel ID"} ) ) . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {
+		print "multigraph technicolor_up_power\n";
+                for my $ch ( 0 .. @upstream-1)
+                {
+                        my $chan = $upstream[$ch];
+                        print "upstream_" . $ch . "_power.value " . $chan->{"Power"} . "\n";
+
+                }
+        }
+
+        if ( $self =~ /multi/)
+        {
+		print "multigraph technicolor_up_chanid\n";
+                for my $ch ( 0 .. @upstream-1)
+                {
+                        my $chan = $upstream[$ch];
+                        print "upstream_" . $ch . "_freq.value " . (int( $chan->{"Channel ID"} ) ) . "\n";
+
+                }
+        }
+
+
+
+}
+#######################################
+
+set_aspect();
+connect_and_parse();
+
+if ( $ARGV[0] && $ARGV[0] eq "config" ) {
+        print_config();
+}
+
+print_values();
